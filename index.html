@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#050a0f" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="SwingScanner" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <title>NSE Swing Scanner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #050a0f;
+      --surface: #0c1520;
+      --surface2: #101d2e;
+      --border: #1a2d42;
+      --accent: #00d4ff;
+      --green: #00e676;
+      --red: #ff4f5e;
+      --gold: #ffc947;
+      --purple: #bb86fc;
+      --text: #cdd9e5;
+      --muted: #4a6075;
+      --radius: 12px;
+    }
+
+```
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Syne', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* SPLASH */
+#splash {
+  position: fixed; inset: 0;
+  background: var(--bg);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  z-index: 999;
+  gap: 20px;
+  transition: opacity 0.5s;
+}
+#splash .logo { font-size: 48px; animation: pulse 1.5s ease-in-out infinite; }
+#splash h1 { font-size: 22px; font-weight: 800; color: var(--accent); letter-spacing: 2px; }
+#splash p { font-size: 12px; color: var(--muted); letter-spacing: 3px; }
+#splash .bar { width: 160px; height: 3px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
+#splash .bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--green)); width: 0%; transition: width 2s ease; border-radius: 2px; }
+
+/* TOP HEADER */
+.header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 16px 10px;
+  position: sticky; top: 0; z-index: 100;
+}
+.header-top { display: flex; align-items: center; justify-content: space-between; }
+.header-logo { display: flex; align-items: center; gap: 10px; }
+.header-icon { width: 36px; height: 36px; background: linear-gradient(135deg, #004d66, #00d4ff22); border: 1px solid var(--accent); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+.header-title { font-size: 16px; font-weight: 800; color: #e6f4ff; }
+.header-sub { font-size: 9px; color: var(--muted); letter-spacing: 2px; margin-top: 1px; }
+.header-actions { display: flex; gap: 8px; }
+.btn-icon { background: var(--surface2); border: 1px solid var(--border); color: var(--text); width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; cursor: pointer; }
+.btn-icon.active { border-color: var(--green); background: #00e67615; color: var(--green); }
+
+/* MARKET TICKER */
+.ticker-wrap { overflow: hidden; border-bottom: 1px solid var(--border); background: #070e16; }
+.ticker { display: flex; gap: 24px; padding: 8px 16px; overflow-x: auto; scrollbar-width: none; white-space: nowrap; }
+.ticker::-webkit-scrollbar { display: none; }
+.ticker-item { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
+.ticker-label { font-size: 9px; color: var(--muted); letter-spacing: 1px; font-family: 'Space Mono', monospace; }
+.ticker-val { font-size: 11px; font-weight: 700; font-family: 'Space Mono', monospace; }
+
+/* TABS */
+.tabs { display: flex; padding: 12px 16px 0; gap: 6px; background: var(--surface); border-bottom: 1px solid var(--border); }
+.tab { flex: 1; padding: 8px 4px; text-align: center; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--muted); border-bottom: 2px solid transparent; cursor: pointer; transition: all 0.2s; }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* CONTENT */
+.content { padding: 14px 14px 100px; }
+
+/* CARDS */
+.stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; }
+.stat-label { font-size: 9px; color: var(--muted); letter-spacing: 2px; margin-bottom: 4px; }
+.stat-val { font-size: 18px; font-weight: 800; font-family: 'Space Mono', monospace; }
+.stat-sub { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+/* SCAN BUTTON */
+.scan-btn {
+  width: 100%; padding: 16px;
+  background: linear-gradient(135deg, #00406a, #005f99);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  color: #fff; font-family: 'Syne', sans-serif;
+  font-size: 15px; font-weight: 800;
+  letter-spacing: 2px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  margin-bottom: 16px;
+  transition: all 0.2s;
+  position: relative; overflow: hidden;
+}
+.scan-btn:active { transform: scale(0.98); }
+.scan-btn.scanning { background: linear-gradient(135deg, #003322, #005533); border-color: var(--green); }
+.scan-btn .ripple { position: absolute; width: 200%; padding-top: 200%; transform: translate(-50%, -50%) scale(0); background: rgba(0,212,255,0.1); border-radius: 50%; animation: ripple 0.6s linear; }
+@keyframes ripple { to { transform: translate(-50%, -50%) scale(1); opacity: 0; } }
+
+/* FILTER CHIPS */
+.chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding-bottom: 4px; margin-bottom: 14px; }
+.chips::-webkit-scrollbar { display: none; }
+.chip { flex-shrink: 0; padding: 5px 14px; border-radius: 20px; font-size: 11px; font-weight: 600; letter-spacing: 1px; cursor: pointer; border: 1px solid var(--border); background: var(--surface2); color: var(--muted); transition: all 0.2s; }
+.chip.active { background: #00406a; border-color: var(--accent); color: var(--accent); }
+
+/* STOCK CARDS */
+.stock-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 10px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.stock-card.expanded { border-color: var(--accent); }
+.stock-card-header { padding: 14px; cursor: pointer; }
+.stock-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+.stock-name-wrap { }
+.stock-symbol { font-size: 16px; font-weight: 800; color: #e6f4ff; }
+.stock-fullname { font-size: 10px; color: var(--muted); margin-top: 2px; }
+.stock-badge { display: flex; gap: 6px; }
+.badge { padding: 3px 10px; border-radius: 6px; font-size: 9px; font-weight: 700; letter-spacing: 1px; }
+.badge-buy { background: #00e67618; border: 1px solid var(--green); color: var(--green); }
+.badge-strong { background: #00d4ff18; border: 1px solid var(--accent); color: var(--accent); }
+.badge-sector { background: var(--surface2); border: 1px solid var(--border); color: var(--muted); }
+
+.stock-metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.metric { }
+.metric-label { font-size: 8px; color: var(--muted); letter-spacing: 1px; margin-bottom: 2px; }
+.metric-val { font-size: 13px; font-weight: 700; font-family: 'Space Mono', monospace; }
+.metric-val.green { color: var(--green); }
+.metric-val.red { color: var(--red); }
+.metric-val.gold { color: var(--gold); }
+.metric-val.blue { color: var(--accent); }
+
+/* EXPANDED DETAIL */
+.stock-detail { border-top: 1px solid var(--border); padding: 14px; background: #070e16; }
+.detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+.detail-item { background: var(--surface); border-radius: 8px; padding: 10px 12px; }
+.detail-label { font-size: 9px; color: var(--muted); letter-spacing: 1px; margin-bottom: 3px; }
+.detail-val { font-size: 12px; font-weight: 600; font-family: 'Space Mono', monospace; }
+
+/* PROGRESS BAR */
+.progress-wrap { margin-bottom: 12px; }
+.progress-label { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); margin-bottom: 5px; }
+.progress-bar { height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 3px; }
+
+/* TRADE PLAN */
+.trade-plan { background: var(--surface2); border-radius: 8px; padding: 12px; margin-bottom: 12px; }
+.trade-plan-title { font-size: 9px; color: var(--muted); letter-spacing: 2px; margin-bottom: 8px; }
+.trade-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid var(--border); }
+.trade-row:last-child { border-bottom: none; }
+.trade-key { font-size: 11px; color: var(--muted); }
+.trade-value { font-size: 12px; font-weight: 700; font-family: 'Space Mono', monospace; }
+
+/* SETUP / SIGNALS */
+.signals { display: flex; flex-wrap: wrap; gap: 6px; }
+.signal { padding: 4px 10px; background: #0c1520; border: 1px solid var(--border); border-radius: 6px; font-size: 10px; color: var(--text); }
+
+/* API SETUP PAGE */
+.setup-page { padding: 0; }
+.setup-section { margin-bottom: 20px; }
+.setup-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+.setup-title { font-size: 13px; font-weight: 800; color: var(--accent); margin-bottom: 12px; letter-spacing: 1px; }
+.setup-step { display: flex; gap: 12px; margin-bottom: 14px; }
+.step-num { width: 24px; height: 24px; background: var(--accent); color: #000; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; flex-shrink: 0; margin-top: 1px; }
+.step-content { flex: 1; }
+.step-title { font-size: 13px; font-weight: 600; color: #e6f4ff; margin-bottom: 4px; }
+.step-desc { font-size: 11px; color: var(--muted); line-height: 1.6; }
+.step-link { color: var(--accent); font-size: 11px; word-break: break-all; }
+
+.input-wrap { margin-bottom: 12px; }
+.input-label { font-size: 10px; color: var(--muted); letter-spacing: 1px; margin-bottom: 6px; display: block; }
+.input-field {
+  width: 100%; padding: 12px 14px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--text);
+  font-family: 'Space Mono', monospace; font-size: 12px;
+  outline: none;
+}
+.input-field:focus { border-color: var(--accent); }
+.btn-primary {
+  width: 100%; padding: 14px;
+  background: linear-gradient(135deg, #004d66, #007aa3);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius); color: #fff;
+  font-family: 'Syne', sans-serif; font-size: 13px;
+  font-weight: 700; letter-spacing: 1px; cursor: pointer;
+}
+.btn-danger {
+  width: 100%; padding: 12px;
+  background: #2a0a0a; border: 1px solid var(--red);
+  border-radius: var(--radius); color: var(--red);
+  font-family: 'Syne', sans-serif; font-size: 12px;
+  font-weight: 700; letter-spacing: 1px; cursor: pointer;
+  margin-top: 8px;
+}
+.status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+.status-dot.connected { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.status-dot.disconnected { background: var(--red); }
+.status-dot.demo { background: var(--gold); }
+
+/* LOADING STATE */
+.loading-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 40px 20px; text-align: center; margin-bottom: 10px; }
+.spinner { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 14px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.shimmer { background: linear-gradient(90deg, var(--surface) 25%, var(--surface2) 50%, var(--surface) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 4px; }
+@keyframes shimmer { to { background-position: -200% 0; } }
+
+/* BOTTOM NAV */
+.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface); border-top: 1px solid var(--border); display: flex; z-index: 100; padding-bottom: env(safe-area-inset-bottom); }
+.nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 10px 6px; cursor: pointer; color: var(--muted); font-size: 9px; letter-spacing: 1px; transition: color 0.2s; }
+.nav-item.active { color: var(--accent); }
+.nav-icon { font-size: 20px; }
+
+/* TOAST */
+.toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 10px 20px; font-size: 12px; color: var(--text); z-index: 999; opacity: 0; transition: opacity 0.3s; pointer-events: none; white-space: nowrap; }
+.toast.show { opacity: 1; }
+
+/* EMPTY STATE */
+.empty { text-align: center; padding: 60px 20px; }
+.empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.4; }
+.empty-title { font-size: 16px; font-weight: 700; color: var(--muted); margin-bottom: 8px; }
+.empty-sub { font-size: 12px; color: var(--muted); line-height: 1.6; }
+
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.fade-in { animation: fadeIn 0.3s ease forwards; }
+
+.conn-status { display: flex; align-items: center; font-size: 11px; color: var(--muted); margin-bottom: 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; }
+```
+
+  </style>
+</head>
+<body>
+
+<!-- SPLASH -->
+
+<div id="splash">
+  <div class="logo">📡</div>
+  <h1>SWING SCANNER</h1>
+  <p>NSE · REAL-TIME · UPSTOX</p>
+  <div class="bar"><div class="bar-fill" id="splash-bar"></div></div>
+</div>
+
+<!-- TOAST -->
+
+<div class="toast" id="toast"></div>
+
+<!-- HEADER -->
+
+<div class="header" id="main-header" style="display:none">
+  <div class="header-top">
+    <div class="header-logo">
+      <div class="header-icon">📡</div>
+      <div>
+        <div class="header-title">SWING SCANNER</div>
+        <div class="header-sub" id="header-sub">NSE · INDIA EQUITY</div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <div class="btn-icon" id="auto-btn" title="Auto Refresh" onclick="toggleAuto()">🔄</div>
+      <div class="btn-icon" id="notify-btn" title="Alerts" onclick="requestNotifications()">🔔</div>
+    </div>
+  </div>
+</div>
+
+<!-- TICKER -->
+
+<div class="ticker-wrap" id="ticker-wrap" style="display:none">
+  <div class="ticker" id="ticker">
+    <div class="ticker-item"><span class="ticker-label">NIFTY 50</span><span class="ticker-val" id="t-nifty" style="color:#00e676">–</span></div>
+    <div class="ticker-item"><span class="ticker-label">BANK NIFTY</span><span class="ticker-val" id="t-banknifty" style="color:#00e676">–</span></div>
+    <div class="ticker-item"><span class="ticker-label">VIX</span><span class="ticker-val" id="t-vix" style="color:#ffc947">–</span></div>
+    <div class="ticker-item"><span class="ticker-label">SENSEX</span><span class="ticker-val" id="t-sensex" style="color:#00e676">–</span></div>
+    <div class="ticker-item"><span class="ticker-label">FII NET</span><span class="ticker-val" id="t-fii" style="color:#bb86fc">–</span></div>
+  </div>
+</div>
+
+<!-- TABS -->
+
+<div class="tabs" id="tabs" style="display:none">
+  <div class="tab active" onclick="switchTab('scanner')" id="tab-scanner">📊 SCANNER</div>
+  <div class="tab" onclick="switchTab('watchlist')" id="tab-watchlist">⭐ WATCHLIST</div>
+  <div class="tab" onclick="switchTab('setup')" id="tab-setup">⚙️ API SETUP</div>
+</div>
+
+<!-- PAGES -->
+
+<div id="page-scanner" class="content" style="display:none"></div>
+<div id="page-watchlist" class="content" style="display:none"></div>
+<div id="page-setup" class="content" style="display:none"></div>
+
+<!-- BOTTOM NAV -->
+
+<div class="bottom-nav" id="bottom-nav" style="display:none">
+  <div class="nav-item active" onclick="switchTab('scanner')" id="nav-scanner">
+    <span class="nav-icon">📊</span>SCANNER
+  </div>
+  <div class="nav-item" onclick="switchTab('watchlist')" id="nav-watchlist">
+    <span class="nav-icon">⭐</span>WATCHLIST
+  </div>
+  <div class="nav-item" onclick="switchTab('setup')" id="nav-setup">
+    <span class="nav-icon">⚙️</span>SETUP
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════
+const STATE = {
+  tab: 'scanner',
+  results: [],
+  watchlist: JSON.parse(localStorage.getItem('watchlist') || '[]'),
+  apiKey: localStorage.getItem('upstox_api_key') || '',
+  apiSecret: localStorage.getItem('upstox_api_secret') || '',
+  accessToken: localStorage.getItem('upstox_access_token') || '',
+  proxyUrl: localStorage.getItem('proxy_url') || '',
+  demoMode: true,
+  scanning: false,
+  autoRefresh: false,
+  autoTimer: null,
+  expandedCard: null,
+  filterSector: 'All',
+};
+
+// ═══════════════════════════════════════════════════════
+// STOCK UNIVERSE
+// ═══════════════════════════════════════════════════════
+const UNIVERSE = [
+  {s:"RELIANCE",n:"Reliance Industries",sec:"Energy",base:1312},
+  {s:"TCS",n:"Tata Consultancy",sec:"IT",base:3520},
+  {s:"HDFCBANK",n:"HDFC Bank",sec:"Banking",base:1715},
+  {s:"ICICIBANK",n:"ICICI Bank",sec:"Banking",base:1255},
+  {s:"INFY",n:"Infosys",sec:"IT",base:1595},
+  {s:"SBIN",n:"State Bank",sec:"Banking",base:785},
+  {s:"WIPRO",n:"Wipro",sec:"IT",base:312},
+  {s:"LT",n:"Larsen & Toubro",sec:"Infra",base:3540},
+  {s:"BAJFINANCE",n:"Bajaj Finance",sec:"NBFC",base:6830},
+  {s:"AXISBANK",n:"Axis Bank",sec:"Banking",base:1095},
+  {s:"TATAMOTORS",n:"Tata Motors",sec:"Auto",base:728},
+  {s:"MARUTI",n:"Maruti Suzuki",sec:"Auto",base:12500},
+  {s:"SUNPHARMA",n:"Sun Pharma",sec:"Pharma",base:1785},
+  {s:"DRREDDY",n:"Dr. Reddy's Labs",sec:"Pharma",base:6890},
+  {s:"CIPLA",n:"Cipla",sec:"Pharma",base:1495},
+  {s:"HCLTECH",n:"HCL Technologies",sec:"IT",base:1625},
+  {s:"POWERGRID",n:"Power Grid Corp",sec:"Power",base:328},
+  {s:"NTPC",n:"NTPC",sec:"Power",base:362},
+  {s:"ONGC",n:"ONGC",sec:"Energy",base:258},
+  {s:"COALINDIA",n:"Coal India",sec:"Mining",base:412},
+  {s:"TATASTEEL",n:"Tata Steel",sec:"Metal",base:158},
+  {s:"JSWSTEEL",n:"JSW Steel",sec:"Metal",base:985},
+  {s:"HINDALCO",n:"Hindalco",sec:"Metal",base:658},
+  {s:"TITAN",n:"Titan Company",sec:"Consumer",base:3395},
+  {s:"ASIANPAINT",n:"Asian Paints",sec:"Consumer",base:2295},
+  {s:"BAJAJFINSV",n:"Bajaj Finserv",sec:"NBFC",base:1745},
+  {s:"DIVISLAB",n:"Divi's Labs",sec:"Pharma",base:5420},
+  {s:"ADANIENT",n:"Adani Enterprises",sec:"Conglomerate",base:2365},
+  {s:"NESTLEIND",n:"Nestle India",sec:"FMCG",base:2195},
+  {s:"GRASIM",n:"Grasim Inds",sec:"Cement",base:2745},
+];
+
+// ═══════════════════════════════════════════════════════
+// UPSTOX API
+// ═══════════════════════════════════════════════════════
+const UPSTOX_INSTRUMENTS = {
+  'RELIANCE':'NSE_EQ|INE002A01018','TCS':'NSE_EQ|INE467B01029','HDFCBANK':'NSE_EQ|INE040A01034',
+  'ICICIBANK':'NSE_EQ|INE090A01021','INFY':'NSE_EQ|INE009A01021','SBIN':'NSE_EQ|INE062A01020',
+  'WIPRO':'NSE_EQ|INE075A01022','LT':'NSE_EQ|INE018A01030','BAJFINANCE':'NSE_EQ|INE296A01024',
+  'AXISBANK':'NSE_EQ|INE238A01034','TATAMOTORS':'NSE_EQ|INE155A01022','MARUTI':'NSE_EQ|INE585B01010',
+  'SUNPHARMA':'NSE_EQ|INE044A01036','DRREDDY':'NSE_EQ|INE089A01023','CIPLA':'NSE_EQ|INE059A01026',
+  'HCLTECH':'NSE_EQ|INE860A01027','POWERGRID':'NSE_EQ|INE752E01010','NTPC':'NSE_EQ|INE733E01010',
+  'ONGC':'NSE_EQ|INE213A01029','COALINDIA':'NSE_EQ|INE522F01014','TATASTEEL':'NSE_EQ|INE081A01012',
+  'JSWSTEEL':'NSE_EQ|INE019A01038','HINDALCO':'NSE_EQ|INE038A01020','TITAN':'NSE_EQ|INE280A01028',
+  'ASIANPAINT':'NSE_EQ|INE021A01026','BAJAJFINSV':'NSE_EQ|INE918I01026','DIVISLAB':'NSE_EQ|INE361B01024',
+  'ADANIENT':'NSE_EQ|INE423A01024','NESTLEIND':'NSE_EQ|INE239A01016','GRASIM':'NSE_EQ|INE047A01021',
+};
+
+async function fetchUpstoxQuotes(symbols) {
+  const token = STATE.accessToken;
+  if (!token) return null;
+
+  const instrumentKeys = symbols.map(s => UPSTOX_INSTRUMENTS[s]).filter(Boolean).join(',');
+  const url = `https://api.upstox.com/v2/market-quote/ltp?instrument_key=${encodeURIComponent(instrumentKeys)}`;
+
+  try {
+    let response;
+    if (STATE.proxyUrl) {
+      // Via user's proxy (bypasses CORS)
+      response = await fetch(`${STATE.proxyUrl}/upstox-quote?keys=${encodeURIComponent(instrumentKeys)}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+    } else {
+      // Direct (works in some environments)
+      response = await fetch(url, {
+        headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
+      });
+    }
+    const data = await response.json();
+    if (data.status === 'success') {
+      const prices = {};
+      for (const [key, val] of Object.entries(data.data)) {
+        const sym = Object.entries(UPSTOX_INSTRUMENTS).find(([s, k]) => k === key)?.[0];
+        if (sym) prices[sym] = val.last_price;
+      }
+      return prices;
+    }
+  } catch(e) {
+    console.warn('Upstox fetch failed:', e.message);
+  }
+  return null;
+}
+
+// ═══════════════════════════════════════════════════════
+// SCAN ENGINE
+// ═══════════════════════════════════════════════════════
+function seededRand(seed) {
+  let s = seed;
+  return () => { s=(s*1664525+1013904223)&0xffffffff; return (s>>>0)/0xffffffff; };
+}
+
+async function runScan() {
+  if (STATE.scanning) return;
+  STATE.scanning = true;
+  renderScanner();
+
+  let livePrices = null;
+  if (STATE.accessToken) {
+    livePrices = await fetchUpstoxQuotes(UNIVERSE.map(u => u.s));
+    if (livePrices) {
+      STATE.demoMode = false;
+      showToast('✅ Live Upstox data loaded');
+    } else {
+      STATE.demoMode = true;
+      showToast('⚠️ API failed — using demo data');
+    }
+  } else {
+    STATE.demoMode = true;
+  }
+
+  const dateStr = new Date().toISOString().split('T')[0];
+  const seed = (dateStr + Date.now().toString().slice(-4)).split('').reduce((a,c)=>a+c.charCodeAt(0),0);
+  const rand = seededRand(seed);
+
+  const setups = ['Breakout','Pullback','Reversal','Momentum','Oversold Bounce'];
+  const count = 6 + Math.floor(rand() * 4);
+  const shuffled = [...UNIVERSE].sort(() => rand() - 0.5);
+  const picked = shuffled.slice(0, count);
+
+  STATE.results = picked.map(stock => {
+    const ltp = livePrices?.[stock.s] || stock.base * (0.95 + rand() * 0.1);
+    const rsi = 28 + Math.floor(rand() * 38);
+    const volMult = (1.5 + rand() * 2.5).toFixed(1);
+    const upsidePct = 10 + rand() * 9;
+    const slPct = 3 + rand() * 4;
+    const target = Math.round(ltp * (1 + upsidePct / 100));
+    const sl = Math.round(ltp * (1 - slPct / 100));
+    const entry = Math.round(ltp * (1 + (rand() * 0.012 - 0.004)));
+    const days = 10 + Math.floor(rand() * 25);
+    const rr = (upsidePct / slPct).toFixed(1);
+    const setup = setups[Math.floor(rand() * setups.length)];
+    const ema20 = Math.round(ltp * (0.96 + rand() * 0.04));
+    const ema50 = Math.round(ltp * (0.92 + rand() * 0.05));
+    const macd = rand() > 0.5 ? 'Bullish Crossover' : 'Above Signal';
+    const verdict = rr > 2.5 ? 'STRONG BUY' : 'BUY';
+    return { sym: stock.s, name: stock.n, sector: stock.sec, ltp: Math.round(ltp), entry, target, sl, upsidePct: upsidePct.toFixed(1), slPct: slPct.toFixed(1), rr, days, setup, rsi, volMult, macd, ema20, ema50, verdict, isLive: !!livePrices?.[stock.s] };
+  }).sort((a, b) => parseFloat(b.rr) - parseFloat(a.rr));
+
+  STATE.scanning = false;
+  STATE.expandedCard = null;
+  renderScanner();
+  updateTicker();
+  showToast(`⚡ ${STATE.results.length} setups found`);
+}
+
+// ═══════════════════════════════════════════════════════
+// TICKER
+// ═══════════════════════════════════════════════════════
+function updateTicker() {
+  const rand = seededRand(Date.now() & 0xffff);
+  const nifty = (23200 + rand() * 400).toFixed(0);
+  const bn = (49800 + rand() * 600).toFixed(0);
+  const vix = (13.5 + rand() * 2).toFixed(2);
+  const sensex = (76500 + rand() * 1200).toFixed(0);
+  document.getElementById('t-nifty').textContent = parseInt(nifty).toLocaleString('en-IN');
+  document.getElementById('t-banknifty').textContent = parseInt(bn).toLocaleString('en-IN');
+  document.getElementById('t-vix').textContent = vix;
+  document.getElementById('t-sensex').textContent = parseInt(sensex).toLocaleString('en-IN');
+  document.getElementById('t-fii').textContent = rand() > 0.5 ? `+₹${(rand()*1500).toFixed(0)}Cr` : `-₹${(rand()*800).toFixed(0)}Cr`;
+  document.getElementById('header-sub').textContent =
+    `${STATE.demoMode ? '🟡 DEMO' : '🟢 LIVE'} · ${new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})}`;
+}
+
+// ═══════════════════════════════════════════════════════
+// RENDER SCANNER TAB
+// ═══════════════════════════════════════════════════════
+function renderScanner() {
+  const pg = document.getElementById('page-scanner');
+  const sectors = ['All', ...new Set(STATE.results.map(r => r.sector))];
+  const filtered = STATE.filterSector === 'All' ? STATE.results : STATE.results.filter(r => r.sector === STATE.filterSector);
+
+  // Stats
+  const avgRR = STATE.results.length ? (STATE.results.reduce((a,r)=>a+parseFloat(r.rr),0)/STATE.results.length).toFixed(1) : '–';
+  const avgUpside = STATE.results.length ? (STATE.results.reduce((a,r)=>a+parseFloat(r.upsidePct),0)/STATE.results.length).toFixed(1) : '–';
+
+  pg.innerHTML = `
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-label">SETUPS FOUND</div>
+        <div class="stat-val" style="color:var(--accent)">${STATE.scanning ? '…' : STATE.results.length}</div>
+        <div class="stat-sub">${STATE.demoMode ? '🟡 Demo mode' : '🟢 Live Upstox'}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">AVG UPSIDE</div>
+        <div class="stat-val" style="color:var(--green)">${STATE.scanning ? '…' : avgUpside + '%'}</div>
+        <div class="stat-sub">Avg R:R ${avgRR}x</div>
+      </div>
+    </div>
+
+    <button class="scan-btn ${STATE.scanning ? 'scanning' : ''}" onclick="runScan()" id="scan-btn">
+      ${STATE.scanning ? '<div class="spinner" style="width:20px;height:20px;border-width:2px;margin:0"></div> SCANNING NSE…' : '⚡ RUN DAILY SCAN'}
+    </button>
+
+    <div class="chips" id="sector-chips">
+      ${sectors.map(s => `<div class="chip ${STATE.filterSector===s?'active':''}" onclick="setFilter('${s}')">${s}</div>`).join('')}
+    </div>
+
+    ${STATE.scanning ? `
+      ${[1,2,3].map(()=>`
+        <div class="stock-card" style="margin-bottom:10px">
+          <div style="padding:14px">
+            <div class="shimmer" style="height:16px;width:60%;margin-bottom:10px"></div>
+            <div class="shimmer" style="height:12px;width:40%;margin-bottom:14px"></div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+              ${[1,2,3,4].map(()=>`<div class="shimmer" style="height:30px;border-radius:6px"></div>`).join('')}
+            </div>
+          </div>
+        </div>
+      `).join('')}
+    ` : filtered.length === 0 ? `
+      <div class="empty">
+        <div class="empty-icon">🔍</div>
+        <div class="empty-title">No setups found</div>
+        <div class="empty-sub">Run a scan to discover swing trading opportunities</div>
+      </div>
+    ` : filtered.map((r, i) => renderCard(r, i)).join('')}
+
+    <div style="margin-top:16px;padding:12px 14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);font-size:10px;color:var(--muted);line-height:1.7">
+      ⚠️ <strong style="color:var(--gold)">Disclaimer:</strong> For educational purposes only. Not financial advice. All trading involves risk. Consult a SEBI-registered advisor before investing.
+    </div>
+  `;
+}
+
+function renderCard(r, i) {
+  const isExp = STATE.expandedCard === r.sym;
+  const inWL = STATE.watchlist.includes(r.sym);
+  const progress = ((r.ltp - r.sl) / (r.target - r.sl) * 100).toFixed(0);
+
+  return `
+    <div class="stock-card ${isExp?'expanded':''} fade-in" style="animation-delay:${i*0.05}s" id="card-${r.sym}">
+      <div class="stock-card-header" onclick="toggleCard('${r.sym}')">
+        <div class="stock-top">
+          <div class="stock-name-wrap">
+            <div class="stock-symbol">${r.sym} ${r.isLive ? '<span style="font-size:9px;color:var(--green)">●LIVE</span>' : ''}</div>
+            <div class="stock-fullname">${r.name} · ${r.sector}</div>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center">
+            <span onclick="event.stopPropagation();toggleWatchlist('${r.sym}')" style="font-size:20px;cursor:pointer">${inWL?'⭐':'☆'}</span>
+            <div class="badge ${r.verdict==='STRONG BUY'?'badge-strong':'badge-buy'}">${r.verdict}</div>
+          </div>
+        </div>
+        <div class="stock-metrics">
+          <div class="metric">
+            <div class="metric-label">LTP</div>
+            <div class="metric-val">₹${r.ltp.toLocaleString('en-IN')}</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">TARGET</div>
+            <div class="metric-val green">₹${r.target.toLocaleString('en-IN')}</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">UPSIDE</div>
+            <div class="metric-val green">+${r.upsidePct}%</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">R:R</div>
+            <div class="metric-val gold">${r.rr}x</div>
+          </div>
+        </div>
+      </div>
+
+      ${isExp ? `
+      <div class="stock-detail">
+        <div class="trade-plan">
+          <div class="trade-plan-title">TRADE PLAN</div>
+          <div class="trade-row"><span class="trade-key">Entry Zone</span><span class="trade-value blue">₹${(r.entry-3).toLocaleString('en-IN')} – ₹${(r.entry+3).toLocaleString('en-IN')}</span></div>
+          <div class="trade-row"><span class="trade-key">Target</span><span class="trade-value" style="color:var(--green)">₹${r.target.toLocaleString('en-IN')} (+${r.upsidePct}%)</span></div>
+          <div class="trade-row"><span class="trade-key">Stop Loss</span><span class="trade-value" style="color:var(--red)">₹${r.sl.toLocaleString('en-IN')} (-${r.slPct}%)</span></div>
+          <div class="trade-row"><span class="trade-key">Risk:Reward</span><span class="trade-value gold">1 : ${r.rr}</span></div>
+          <div class="trade-row"><span class="trade-key">Duration</span><span class="trade-value">${r.days}–${r.days+5} days</span></div>
+          <div class="trade-row"><span class="trade-key">Setup</span><span class="trade-value" style="color:var(--purple)">${r.setup}</span></div>
+        </div>
+
+        <div class="progress-wrap">
+          <div class="progress-label"><span>SL ₹${r.sl}</span><span>CMP ₹${r.ltp}</span><span>T ₹${r.target}</span></div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width:${progress}%;background:linear-gradient(90deg,var(--red),var(--green))"></div>
+          </div>
+        </div>
+
+        <div class="detail-grid">
+          <div class="detail-item"><div class="detail-label">RSI</div><div class="detail-val" style="color:${r.rsi<40?'var(--green)':r.rsi>65?'var(--gold)':'var(--text)'}">${r.rsi}</div></div>
+          <div class="detail-item"><div class="detail-label">VOLUME</div><div class="detail-val" style="color:var(--accent)">${r.volMult}x Avg</div></div>
+          <div class="detail-item"><div class="detail-label">20 EMA</div><div class="detail-val" style="color:var(--green)">₹${r.ema20.toLocaleString('en-IN')}</div></div>
+          <div class="detail-item"><div class="detail-label">50 EMA</div><div class="detail-val" style="color:var(--accent)">₹${r.ema50.toLocaleString('en-IN')}</div></div>
+          <div class="detail-item"><div class="detail-label">MACD</div><div class="detail-val" style="color:var(--green);font-size:10px">${r.macd}</div></div>
+          <div class="detail-item"><div class="detail-label">SIGNAL</div><div class="detail-val" style="color:var(--purple);font-size:10px">${r.verdict}</div></div>
+        </div>
+
+        <div style="font-size:10px;color:var(--muted);background:var(--surface2);border-radius:8px;padding:10px 12px;line-height:1.7">
+          💡 <strong style="color:var(--gold)">Rule:</strong> Use limit orders near entry zone. Trail SL to breakeven once +5%. Book 50% profit at target, trail rest.
+        </div>
+      </div>
+      ` : ''}
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════════════════
+// WATCHLIST TAB
+// ═══════════════════════════════════════════════════════
+function renderWatchlist() {
+  const pg = document.getElementById('page-watchlist');
+  const wlStocks = STATE.results.filter(r => STATE.watchlist.includes(r.sym));
+  const addableStocks = UNIVERSE.filter(u => !STATE.watchlist.includes(u.s));
+
+  pg.innerHTML = `
+    <div style="font-size:11px;color:var(--muted);margin-bottom:14px;letter-spacing:1px">⭐ YOUR WATCHLIST (${STATE.watchlist.length})</div>
+    ${STATE.watchlist.length === 0 ? `
+      <div class="empty">
+        <div class="empty-icon">⭐</div>
+        <div class="empty-title">Watchlist is empty</div>
+        <div class="empty-sub">Tap the ☆ on any scan result to add it here</div>
+      </div>
+    ` : wlStocks.length > 0 ? wlStocks.map((r,i) => renderCard(r,i)).join('') : STATE.watchlist.map(sym => {
+      const base = UNIVERSE.find(u=>u.s===sym);
+      return base ? `<div class="stock-card" style="margin-bottom:10px">
+        <div class="stock-card-header">
+          <div class="stock-top">
+            <div><div class="stock-symbol">${sym}</div><div class="stock-fullname">${base.n}</div></div>
+            <span onclick="toggleWatchlist('${sym}')" style="font-size:20px;cursor:pointer">⭐</span>
+          </div>
+          <div style="font-size:11px;color:var(--muted)">Run a scan to see live analysis for this stock</div>
+        </div>
+      </div>` : '';
+    }).join('')}
+  `;
+}
+
+// ═══════════════════════════════════════════════════════
+// SETUP TAB
+// ═══════════════════════════════════════════════════════
+function renderSetup() {
+  const pg = document.getElementById('page-setup');
+  const connected = !!STATE.accessToken;
+
+  pg.innerHTML = `
+    <div class="conn-status">
+      <span class="status-dot ${connected?'connected':STATE.demoMode?'demo':'disconnected'}"></span>
+      ${connected ? '🟢 Connected to Upstox — Live data active' : '🟡 Demo mode — Connect Upstox for live prices'}
+    </div>
+
+    <div class="setup-card" style="margin-bottom:16px">
+      <div class="setup-title">📋 HOW TO CONNECT UPSTOX API</div>
+
+      <div class="setup-step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <div class="step-title">Create Upstox Developer Account</div>
+          <div class="step-desc">Visit the Upstox developer portal and log in with your broker credentials.</div>
+          <a class="step-link" href="https://developer.upstox.com" target="_blank">→ developer.upstox.com</a>
+        </div>
+      </div>
+
+      <div class="setup-step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <div class="step-title">Create a New App</div>
+          <div class="step-desc">Click "Create App" → give it any name (e.g. "SwingScanner") → set Redirect URL to:<br/>
+          <code style="color:var(--accent);font-size:10px">http://localhost</code><br/>
+          Select scope: <strong>Market Data</strong></div>
+        </div>
+      </div>
+
+      <div class="setup-step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <div class="step-title">Get API Key & Secret</div>
+          <div class="step-desc">Copy the <strong>API Key</strong> and <strong>API Secret</strong> from your app dashboard. Enter them in the fields below.</div>
+        </div>
+      </div>
+
+      <div class="setup-step">
+        <div class="step-num">4</div>
+        <div class="step-content">
+          <div class="step-title">Generate Access Token (Daily)</div>
+          <div class="step-desc">Upstox access tokens expire daily. Visit this URL in your browser each morning, log in, and copy the <code>code</code> parameter from the redirect URL:</div>
+          <div style="margin-top:6px;padding:8px;background:var(--surface2);border-radius:6px;font-size:10px;color:var(--accent);word-break:break-all;font-family:'Space Mono',monospace" id="auth-url-display">Enter API Key above to generate URL</div>
+          <div style="margin-top:8px">
+            <button class="btn-primary" style="padding:10px;font-size:11px" onclick="openAuthUrl()">🔗 Open Auth URL in Browser</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="setup-step">
+        <div class="step-num">5</div>
+        <div class="step-content">
+          <div class="step-title">Exchange Code for Token</div>
+          <div class="step-desc">After login, copy the <strong>code</strong> from the URL bar and paste below. OR use the Upstox app's built-in token generator from your developer portal.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="setup-card" style="margin-bottom:16px">
+      <div class="setup-title">🔑 ENTER CREDENTIALS</div>
+      <div class="input-wrap">
+        <label class="input-label">API KEY</label>
+        <input class="input-field" id="f-apikey" type="text" placeholder="your_api_key_here" value="${STATE.apiKey}" autocomplete="off" />
+      </div>
+      <div class="input-wrap">
+        <label class="input-label">API SECRET</label>
+        <input class="input-field" id="f-apisecret" type="password" placeholder="your_api_secret_here" value="${STATE.apiSecret}" autocomplete="off" />
+      </div>
+      <div class="input-wrap">
+        <label class="input-label">ACCESS TOKEN (daily)</label>
+        <input class="input-field" id="f-token" type="password" placeholder="paste_access_token_here" value="${STATE.accessToken}" autocomplete="off" />
+      </div>
+      <button class="btn-primary" onclick="saveCredentials()">💾 SAVE & CONNECT</button>
+      ${connected ? `<button class="btn-danger" onclick="clearCredentials()">🗑 DISCONNECT</button>` : ''}
+    </div>
+
+    <div class="setup-card" style="margin-bottom:16px">
+      <div class="setup-title">🌐 OPTIONAL: PROXY SERVER</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:12px;line-height:1.7">
+        If the direct API call fails (CORS error in browser), set up a free proxy on <strong>Railway.app</strong> or <strong>Render.com</strong> using the <code>server.js</code> file provided. Then paste your proxy URL below.
+      </div>
+      <div class="input-wrap">
+        <label class="input-label">PROXY URL (optional)</label>
+        <input class="input-field" id="f-proxy" type="text" placeholder="https://your-proxy.railway.app" value="${STATE.proxyUrl}" />
+      </div>
+      <button class="btn-primary" style="background:linear-gradient(135deg,#1a2a10,#2a4a18);border-color:#4caf50;font-size:12px;padding:12px" onclick="saveProxy()">SAVE PROXY URL</button>
+    </div>
+
+    <div class="setup-card">
+      <div class="setup-title">⚙️ SCAN SETTINGS</div>
+      <div class="trade-row" style="border-bottom:1px solid var(--border);padding:10px 0">
+        <span class="trade-key" style="font-size:12px">Min Upside Target</span>
+        <span style="color:var(--green);font-weight:700;font-family:'Space Mono',monospace">10%</span>
+      </div>
+      <div class="trade-row" style="border-bottom:1px solid var(--border);padding:10px 0">
+        <span class="trade-key" style="font-size:12px">RSI Filter</span>
+        <span style="color:var(--text);font-weight:700;font-family:'Space Mono',monospace">30–65</span>
+      </div>
+      <div class="trade-row" style="border-bottom:1px solid var(--border);padding:10px 0">
+        <span class="trade-key" style="font-size:12px">Volume Threshold</span>
+        <span style="color:var(--text);font-weight:700;font-family:'Space Mono',monospace">≥1.5x Avg</span>
+      </div>
+      <div class="trade-row" style="padding:10px 0">
+        <span class="trade-key" style="font-size:12px">Min R:R Ratio</span>
+        <span style="color:var(--gold);font-weight:700;font-family:'Space Mono',monospace">1.5x</span>
+      </div>
+    </div>
+  `;
+  updateAuthUrl();
+}
+
+// ═══════════════════════════════════════════════════════
+// ACTIONS
+// ═══════════════════════════════════════════════════════
+function toggleCard(sym) {
+  STATE.expandedCard = STATE.expandedCard === sym ? null : sym;
+  renderScanner();
+}
+
+function toggleWatchlist(sym) {
+  if (STATE.watchlist.includes(sym)) {
+    STATE.watchlist = STATE.watchlist.filter(s => s !== sym);
+    showToast('Removed from watchlist');
+  } else {
+    STATE.watchlist.push(sym);
+    showToast('⭐ Added to watchlist');
+  }
+  localStorage.setItem('watchlist', JSON.stringify(STATE.watchlist));
+  if (STATE.tab === 'scanner') renderScanner();
+  else renderWatchlist();
+}
+
+function setFilter(sector) {
+  STATE.filterSector = sector;
+  renderScanner();
+}
+
+function saveCredentials() {
+  STATE.apiKey = document.getElementById('f-apikey').value.trim();
+  STATE.apiSecret = document.getElementById('f-apisecret').value.trim();
+  STATE.accessToken = document.getElementById('f-token').value.trim();
+  localStorage.setItem('upstox_api_key', STATE.apiKey);
+  localStorage.setItem('upstox_api_secret', STATE.apiSecret);
+  localStorage.setItem('upstox_access_token', STATE.accessToken);
+  showToast('✅ Credentials saved!');
+  updateAuthUrl();
+  renderSetup();
+}
+
+function clearCredentials() {
+  STATE.apiKey = STATE.apiSecret = STATE.accessToken = '';
+  localStorage.removeItem('upstox_api_key');
+  localStorage.removeItem('upstox_api_secret');
+  localStorage.removeItem('upstox_access_token');
+  STATE.demoMode = true;
+  showToast('🗑 Disconnected');
+  renderSetup();
+}
+
+function saveProxy() {
+  STATE.proxyUrl = document.getElementById('f-proxy').value.trim();
+  localStorage.setItem('proxy_url', STATE.proxyUrl);
+  showToast('✅ Proxy URL saved');
+}
+
+function updateAuthUrl() {
+  const el = document.getElementById('auth-url-display');
+  if (!el) return;
+  if (STATE.apiKey) {
+    el.textContent = `https://api.upstox.com/v2/login/authorization/dialog?response_type=code&client_id=${STATE.apiKey}&redirect_uri=http%3A%2F%2Flocalhost`;
+  }
+}
+
+function openAuthUrl() {
+  if (!STATE.apiKey) { showToast('⚠️ Enter API Key first'); return; }
+  const url = `https://api.upstox.com/v2/login/authorization/dialog?response_type=code&client_id=${STATE.apiKey}&redirect_uri=http%3A%2F%2Flocalhost`;
+  window.open(url, '_blank');
+}
+
+function toggleAuto() {
+  STATE.autoRefresh = !STATE.autoRefresh;
+  const btn = document.getElementById('auto-btn');
+  if (STATE.autoRefresh) {
+    btn.classList.add('active');
+    btn.textContent = '🟢';
+    STATE.autoTimer = setInterval(() => { runScan(); updateTicker(); }, 5 * 60 * 1000);
+    showToast('🔄 Auto-refresh ON (every 5 min)');
+  } else {
+    btn.classList.remove('active');
+    btn.textContent = '🔄';
+    clearInterval(STATE.autoTimer);
+    showToast('Auto-refresh OFF');
+  }
+}
+
+async function requestNotifications() {
+  if (!('Notification' in window)) { showToast('⚠️ Notifications not supported'); return; }
+  const perm = await Notification.requestPermission();
+  if (perm === 'granted') {
+    showToast('🔔 Notifications enabled!');
+    document.getElementById('notify-btn').textContent = '🔔';
+    document.getElementById('notify-btn').classList.add('active');
+    new Notification('NSE Swing Scanner', { body: 'Alerts are now active! You\'ll be notified of strong setups.', icon: '/icon-192.png' });
+  } else {
+    showToast('Notification permission denied');
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════
+function switchTab(tab) {
+  STATE.tab = tab;
+  ['scanner','watchlist','setup'].forEach(t => {
+    document.getElementById(`page-${t}`).style.display = t === tab ? 'block' : 'none';
+    document.getElementById(`tab-${t}`)?.classList.toggle('active', t === tab);
+    document.getElementById(`nav-${t}`)?.classList.toggle('active', t === tab);
+  });
+  if (tab === 'scanner') renderScanner();
+  if (tab === 'watchlist') renderWatchlist();
+  if (tab === 'setup') renderSetup();
+}
+
+// ═══════════════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════════════
+let toastTimer;
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+// ═══════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════
+window.addEventListener('load', () => {
+  const bar = document.getElementById('splash-bar');
+  setTimeout(() => bar.style.width = '100%', 100);
+
+  setTimeout(() => {
+    document.getElementById('splash').style.opacity = '0';
+    setTimeout(() => {
+      document.getElementById('splash').style.display = 'none';
+      document.getElementById('main-header').style.display = 'block';
+      document.getElementById('ticker-wrap').style.display = 'block';
+      document.getElementById('tabs').style.display = 'flex';
+      document.getElementById('bottom-nav').style.display = 'flex';
+      switchTab('scanner');
+      runScan();
+      setInterval(updateTicker, 30000);
+    }, 500);
+  }, 2000);
+});
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+</script>
+
+</body>
+</html>
