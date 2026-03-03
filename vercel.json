@@ -7,15 +7,15 @@
   "rewrites": [
     {
       "source": "/proxy",
-      "destination": "/api/proxy"
+      "destination": "/api/proxy?route=proxy"
     },
     {
       "source": "/proxy-post",
-      "destination": "/api/proxy"
+      "destination": "/api/proxy?route=proxy-post"
     },
     {
       "source": "/instruments",
-      "destination": "/api/proxy"
+      "destination": "/api/proxy?route=instruments"
     }
   ]
 }
